@@ -280,3 +280,37 @@ H1: измерить питание ECM при ON→OFF и проверить de
 - UI карточки hypothesis/evidence/next test;
 - automated evidence-bound test;
 - командная simulation 018.
+
+## 19. OpenPort SD — подготовка автономной записи
+Добавлена отдельная вкладка **OpenPort SD**. Она предназначена для подготовки и проверки `logcfg.txt` для автономного логирования OpenPort 2.0 на microSD.
+
+### Что подтверждено исследованием
+OpenPort 2.0 standalone logging использует файл `logcfg.txt` в корне microSD; существуют внешние генераторы, например OPCONFIG, которые формируют этот файл из выбранных PID. В распространённых CAN-примерах `type=obd` + `protocolid=6` означает ISO15765 OBD parameter logging и **отправляет диагностические запросы**. Поэтому SherloCAN не называет такой режим passive/raw CAN capture.
+
+### Текущая вкладка
+- редактор/вставка существующего `logcfg.txt`;
+- validator имени файла, channel type и protocolid;
+- явное предупреждение ACTIVE_DIAGNOSTIC_REQUESTS для `type=obd`;
+- безопасный генератор базового Mode 01 шаблона RPM / Vehicle Speed / Coolant;
+- сохранение готового файла с именем `logcfg.txt`;
+- RAW standalone CAN профиль намеренно не генерируется, пока его синтаксис и поведение OpenPort 2.0 не будут подтверждены документацией или стендовым испытанием.
+
+### Рабочий процесс
+1. Подготовить microSD и открыть вкладку OpenPort SD.
+2. Вставить проверенный config либо создать OBD-шаблон.
+3. Нажать **ПРОВЕРИТЬ** и изучить warnings/features.
+4. Сохранить `logcfg.txt` и поместить его в корень microSD.
+5. Выполнить короткий контрольный автономный сеанс перед длительной поездкой.
+6. Импорт полученных SD-логов в Evidence/Session будет добавлен следующим циклом.
+
+### Ограничение для нашего P0603 расследования
+Цель SherloCAN — пассивная forensic-запись CAN. Наличие автономного OBD logging в OpenPort не доказывает наличие подходящего passive raw-CAN standalone режима. До подтверждения этого режима ноутбук + J2534 остаётся основным путём RAW capture.
+
+### Изменения цикла 019
+- исследован подход OpenPort standalone/logcfg и существующий OPCONFIG;
+- добавлен backend validator;
+- добавлен Mode 01 template builder;
+- добавлена вкладка OpenPort SD;
+- добавлена загрузка/редактирование/валидация/сохранение logcfg.txt;
+- активный OBD режим отделён от passive RAW CAN;
+- добавлены safety tests.
