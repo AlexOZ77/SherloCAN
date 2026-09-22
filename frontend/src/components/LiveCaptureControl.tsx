@@ -8,7 +8,7 @@ export type AtomicCaptureResult={
  evidence:CaptureEvidence|null;error:string|null;transmit_performed:boolean;
 };
 
-export default function LiveCaptureControl({onComplete}:{onComplete:(r:AtomicCaptureResult)=>void}){
+export default function LiveCaptureControl({onComplete,onRunning}:{onComplete:(r:AtomicCaptureResult)=>void;onRunning?:(v:boolean)=>void}){
  const [provider,setProvider]=useState("0"); const [bitrate,setBitrate]=useState("");
  const [maxFrames,setMaxFrames]=useState("1000"); const [running,setRunning]=useState(false);
  const [error,setError]=useState("");
@@ -16,14 +16,14 @@ export default function LiveCaptureControl({onComplete}:{onComplete:(r:AtomicCap
   const rate=Number(bitrate),limit=Number(maxFrames);
   if(!Number.isInteger(rate)||rate<=0){setError("Укажите подтверждённый bitrate (> 0). SherloCAN его не угадывает.");return}
   if(!Number.isInteger(limit)||limit<=0){setError("MAX FRAMES должен быть целым числом > 0.");return}
-  setRunning(true);setError("");
+  setRunning(true);onRunning?.(true);setError("");
   try{
    const q=new URLSearchParams({provider_index:provider,bitrate:String(rate),max_frames:String(limit)});
    const res=await fetch("/api/capture/j2534/atomic-capture?"+q,{method:"POST"});
    if(!res.ok)throw new Error("API "+res.status);
    const data:AtomicCaptureResult=await res.json(); onComplete(data);
    if(data.error)setError(data.error);
-  }catch(e){setError(String(e))}finally{setRunning(false)}
+  }catch(e){setError(String(e))}finally{setRunning(false);onRunning?.(false)}
  };
  return <section className="panel liveControl">
   <div className="pt"><div><Radio/><b>Live Capture</b></div><span>{running?"RUNNING":"READY FOR EXPLICIT INPUT"}</span></div>
