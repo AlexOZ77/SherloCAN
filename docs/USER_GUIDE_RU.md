@@ -331,3 +331,28 @@ OpenPort 2.0 standalone logging использует файл `logcfg.txt` в к
 - provenance metadata import.json;
 - UI PREPARE / IMPORT;
 - тест сохранности исходника и SHA-256.
+
+## 21. Автообнаружение SD и безопасное определение формата
+Перед реализацией проведён reuse-first research; выводы сохранены в `docs/RESEARCH_OPENPORT_SD_021.md`. SherloCAN не пишет собственные парсеры для уже поддерживаемых отраслевых CAN-форматов: для подтверждённых frame-level форматов выбран `python-can`; `cantools` остаётся последующим DBC/decode слоем. OPCONFIG рассматривается как готовый подход к генерации `logcfg.txt`, поэтому общий PID-конфигуратор заново не изобретается.
+
+### Автообнаружение
+Кнопка **НАЙТИ SD** на Windows перечисляет removable drives. Наличие `logcfg.txt` или лог-файлов повышает полезность кандидата, но UI всегда показывает **OpenPort: NOT CONFIRMED** — один только тип диска не доказывает, что это карта OpenPort. Ручной путь сохранён как fallback.
+
+### Определение формата
+Парсер не выбирается только по расширению. Выполняется content sniffing. Подтверждённая строковая сигнатура can-utils/candump получает `RAW_CAN_SUPPORTED / python-can`; канонический SherloCAN CSV — `RAW_CAN_SUPPORTED / sherlocan-csv`; табличный CSV с именованными параметрами, но без CAN ID/frame data — `PARAMETER_LOG`; всё прочее — `UNKNOWN`.
+
+`PARAMETER_LOG` не допускается к CAN-ID First Divergence как будто это RAW CAN. Неизвестный формат не конвертируется автоматически. Import по-прежнему сначала сохраняет оригинальные bytes + SHA-256 и записывает detection metadata.
+
+### Почему выбран этот вариант
+Это минимизирует риск ложной интерпретации Tactrix standalone CSV и одновременно повторно использует зрелые CAN readers. Точное распознавание Tactrix standalone dialect будет добавлено после получения реального файла с microSD пользователя и превращения его в regression fixture.
+
+### Изменения цикла 021
+- research/reuse review;
+- Windows removable-drive discovery без новой зависимости;
+- manual path fallback;
+- content-based format detector;
+- RAW_CAN_SUPPORTED / PARAMETER_LOG / UNKNOWN;
+- python-can назначается только для распознанного candump;
+- detection metadata включена в SD scan/import;
+- UI показывает classification/confidence;
+- regression tests не дают parameter CSV превратиться в RAW CAN.
