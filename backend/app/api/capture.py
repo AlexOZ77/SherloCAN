@@ -8,6 +8,7 @@ from ..capture.j2534.open_test import run_open_test
 from ..capture.j2534.channel_test import run_channel_test
 from ..capture.j2534.controller import CaptureRequest, run_bounded_capture
 from ..capture.j2534.atomic_capture import AtomicCaptureRequest, run_atomic_capture
+from ..capture.experiments import load_sessions, save_session, compare_sessions
 
 router = APIRouter(prefix="/capture", tags=["capture"])
 
@@ -67,6 +68,31 @@ def j2534_atomic_capture(provider_index: int, bitrate: int, timeout_ms: int = 10
     request = AtomicCaptureRequest(provider_index=provider_index, bitrate=bitrate, timeout_ms=timeout_ms, max_frames=max_frames)
     root = Path(__file__).resolve().parents[3] / "data" / "captures"
     return run_atomic_capture(request, root)
+
+@router.get("/experiments")
+def experiments_list() -> list[dict]:
+    root = Path(__file__).resolve().parents[3] / "data" / "captures"
+    return load_sessions(root)
+
+@router.post("/experiments/save")
+def experiments_save(session_id: str, role: str, note: str = "") -> dict:
+    root = Path(__file__).resolve().parents[3] / "data" / "captures"
+    session = next((s for s in load_sessions(root) if s["session_id"] == session_id), None)
+    if session is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="session not found in experiment registry")
+    return save_session(root, session, role, note)
+
+@router.get("/experiments/compare")
+def experiments_compare(a_session_id: str, b_session_id: str) -> dict:
+    root = Path(__file__).resolve().parents[3] / "data" / "captures"
+    sessions = load_sessions(root)
+    a = next((s for s in sessions if s["session_id"] == a_session_id), None)
+    b = next((s for s in sessions if s["session_id"] == b_session_id), None)
+    if not a or not b:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="both registered sessions are required")
+    return compare_sessions(a, b)
 
 def _load_fixture(name: str):
     root = Path(__file__).resolve().parents[3]
