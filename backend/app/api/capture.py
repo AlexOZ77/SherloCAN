@@ -5,6 +5,7 @@ from ..capture.replay import FileReplayAdapter\nfrom ..capture.j2534 import J253
 from ..capture.j2534.provider import probe_providers
 from ..capture.j2534.device_test import run_device_tests
 from ..capture.j2534.open_test import run_open_test
+from ..capture.j2534.channel_test import run_channel_test
 
 router = APIRouter(prefix="/capture", tags=["capture"])
 
@@ -39,6 +40,14 @@ def j2534_device_test() -> list[dict]:
 def j2534_open_test(provider_index: int = 0) -> dict:
     """Explicit hardware gate: PassThruOpen then immediate PassThruClose. No CAN channel is created."""
     return run_open_test(provider_index).to_dict()
+
+@router.post("/j2534/channel-test")
+def j2534_channel_test(provider_index: int = 0, protocol: str = "CAN", bitrate: int | None = None) -> dict:
+    """Explicit raw CAN connect/disconnect gate. No diagnostic messages are transmitted."""
+    if bitrate is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="bitrate is required; SherloCAN does not guess vehicle bitrate")
+    return run_channel_test(provider_index, protocol, bitrate).to_dict()
 
 def _load_fixture(name: str):
     root = Path(__file__).resolve().parents[3]
