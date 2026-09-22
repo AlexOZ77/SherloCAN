@@ -257,3 +257,26 @@ Marker timestamp является **операторским наблюдени�
 - UI Repeatability Panel;
 - automated six-trial simulation test;
 - командный test walkthrough.
+
+## 18. Hypothesis Manager
+Добавлен evidence-bound менеджер диагностических гипотез. Стартовый набор для текущего расследования: **H1 ECM power/shutdown sequence**, **H2 CAN joint/network intermittent**, **H3 ECM KAM/internal retention**, **H4 common power/ground event**.
+
+Каждая карточка содержит статус, конкретные evidence и **NEXT TEST**. Допустимые рабочие состояния интерфейса: **SUPPORTED, CONTRADICTED, INCONCLUSIVE, NOT_TESTED**. В текущей реализации автоматическое CONFIRMED отсутствует намеренно.
+
+### Правило трактовки
+SUPPORTED означает только, что имеющиеся наблюдения поддерживают дальнейшую проверку гипотезы. Это **не подтверждение root cause**. Например, повторяемое CAN-изменение во всех FAULT trials может перевести H2 в SUPPORTED, но не доказывает неисправность CAN joint. H1/H3/H4 при отсутствии прямых измерений питания/KAM/ground остаются INCONCLUSIVE.
+
+### Следующие тесты
+H1: измерить питание ECM при ON→OFF и проверить delayed shutdown. H2: выполнить контролируемый connector/wiggle capture с marker и проверить воспроизводимое multi-ID нарушение. H3: при стабильной сети проверить backup/keep-alive и retention path ECM. H4: сопоставить групповые CAN-события с прямыми измерениями питания/массы.
+
+Командная software simulation сохранена в `docs/TEAM_SIMULATION_018.md`; автотест проверяет переход H2 в SUPPORTED на synthetic 3/3 CAN observation и сохранение H1 как INCONCLUSIVE. Никаких данных автомобиля этот тест не содержит.
+
+### Изменения цикла 018
+- Hypothesis Manager backend;
+- четыре исходные проверяемые гипотезы;
+- evidence-bound статусы без процентов вероятности;
+- NEXT TEST для каждой гипотезы;
+- API hypotheses;
+- UI карточки hypothesis/evidence/next test;
+- automated evidence-bound test;
+- командная simulation 018.
