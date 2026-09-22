@@ -9,19 +9,19 @@ class ProviderProbe:
     role: str
     note: str
 
+def _has(module: str) -> bool:
+    try: return find_spec(module) is not None
+    except (ImportError, AttributeError, ValueError): return False
+
 def probe_providers() -> list[ProviderProbe]:
     """Probe optional reusable providers without importing vendor DLLs."""
-    candidates = [
-        ("J2534", "j2534-api", "PassThru provider", "Preferred reusable J2534 implementation; bench validation required."),
-        ("J2534_REGISTRY", "j2534-api", "registry provider", "Reusable Windows PassThru registry enumeration."),
-        ("can", "python-can", "CAN abstraction", "Planned normalized CAN/log interoperability."),
-        ("cantools", "cantools", "DBC decoder", "Planned provenance-aware DBC decoding."),
-        ("udsoncan", "udsoncan", "UDS client", "Future explicit active diagnostics mode only."),
-        ("isotp", "python-can-isotp", "ISO-TP", "Future active diagnostics transport."),
+    j2534_low=_has("J2534")
+    j2534_registry=_has("J2534_REGISTRY")
+    return [
+        ProviderProbe("j2534-api",j2534_low and j2534_registry,"PassThru provider",
+                      "Verified package modules: J2534 + J2534_REGISTRY; physical OpenPort validation still required."),
+        ProviderProbe("python-can",_has("can"),"CAN abstraction","Normalized CAN/log interoperability."),
+        ProviderProbe("cantools",_has("cantools"),"DBC decoder","Provenance-aware DBC decoding."),
+        ProviderProbe("udsoncan",_has("udsoncan"),"UDS client","Future explicit active diagnostics mode only."),
+        ProviderProbe("python-can-isotp",_has("isotp"),"ISO-TP","Future active diagnostics transport."),
     ]
-    result=[]
-    for module, package, role, note in candidates:
-        try: installed=find_spec(module) is not None
-        except (ImportError, AttributeError, ValueError): installed=False
-        result.append(ProviderProbe(package,installed,role,note))
-    return result
