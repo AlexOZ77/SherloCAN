@@ -77,10 +77,12 @@ def experiments_list() -> list[dict]:
 @router.post("/experiments/save")
 def experiments_save(session_id: str, role: str, note: str = "") -> dict:
     root = Path(__file__).resolve().parents[3] / "data" / "captures"
-    session = next((s for s in load_sessions(root) if s["session_id"] == session_id), None)
-    if session is None:
+    metadata = root / f"{session_id}.session.json"
+    if not metadata.exists():
         from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="session not found in experiment registry")
+        raise HTTPException(status_code=404, detail="capture session metadata not found")
+    import json
+    session = json.loads(metadata.read_text(encoding="utf-8"))
     return save_session(root, session, role, note)
 
 @router.get("/experiments/compare")
