@@ -2,6 +2,7 @@ from __future__ import annotations
 import hashlib,json,shutil
 from datetime import datetime,timezone
 from pathlib import Path
+from .sd_detect import detection_dict
 
 ALLOWED={".csv",".log",".txt"}
 
@@ -13,7 +14,7 @@ def inspect_sd_logs(root:Path)->list[dict]:
             h=hashlib.sha256()
             with p.open("rb") as f:
                 for chunk in iter(lambda:f.read(1024*1024),b""):h.update(chunk)
-            rows.append({"name":p.name,"path":str(p),"size_bytes":p.stat().st_size,"sha256":h.hexdigest(),"modified":p.stat().st_mtime,"format":p.suffix.lower().lstrip(".")})
+            rows.append({"name":p.name,"path":str(p),"size_bytes":p.stat().st_size,"sha256":h.hexdigest(),"modified":p.stat().st_mtime,"format":p.suffix.lower().lstrip("."),"detection":detection_dict(p)})
     return rows
 
 def import_sd_log(source:Path,dest_root:Path)->dict:
@@ -24,6 +25,6 @@ def import_sd_log(source:Path,dest_root:Path)->dict:
     target=folder/source.name
     shutil.copy2(source,target)
     h=hashlib.sha256(target.read_bytes()).hexdigest()
-    meta={"session_id":sid,"source_kind":"OPENPORT_SD_IMPORT","original_name":source.name,"original_path":str(source),"evidence_copy":str(target),"sha256":h,"size_bytes":target.stat().st_size,"format":target.suffix.lower().lstrip("."),"imported_at":datetime.now(timezone.utc).isoformat(),"parsed":False,"interpretation":"Original SD log preserved. Format parsing and CAN semantics are not inferred."}
+    meta={"session_id":sid,"source_kind":"OPENPORT_SD_IMPORT","original_name":source.name,"original_path":str(source),"evidence_copy":str(target),"sha256":h,"size_bytes":target.stat().st_size,"format":target.suffix.lower().lstrip("."),"imported_at":datetime.now(timezone.utc).isoformat(),"detection":detection_dict(target),"parsed":False,"interpretation":"Original SD log preserved. Format parsing and CAN semantics are not inferred."}
     (folder/"import.json").write_text(json.dumps(meta,ensure_ascii=False,indent=2),encoding="utf-8")
     return meta
