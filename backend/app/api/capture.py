@@ -11,6 +11,7 @@ from ..capture.j2534.atomic_capture import AtomicCaptureRequest, run_atomic_capt
 from ..capture.experiments import load_sessions, save_session, compare_sessions
 from ..capture.divergence import first_divergence
 from ..capture.markers import add_marker, load_markers, marker_time
+from ..capture.repeatability import repeatability
 
 router = APIRouter(prefix="/capture", tags=["capture"])
 
@@ -77,7 +78,7 @@ def experiments_list() -> list[dict]:
     return load_sessions(root)
 
 @router.post("/experiments/save")
-def experiments_save(session_id: str, role: str, note: str = "") -> dict:
+def experiments_save(session_id: str, role: str, note: str = "", trial: int | None = None) -> dict:
     root = Path(__file__).resolve().parents[3] / "data" / "captures"
     metadata = root / f"{session_id}.session.json"
     if not metadata.exists():
@@ -85,7 +86,7 @@ def experiments_save(session_id: str, role: str, note: str = "") -> dict:
         raise HTTPException(status_code=404, detail="capture session metadata not found")
     import json
     session = json.loads(metadata.read_text(encoding="utf-8"))
-    return save_session(root, session, role, note)
+    return save_session(root, session, role, note, trial)
 
 @router.get("/experiments/compare")
 def experiments_compare(a_session_id: str, b_session_id: str) -> dict:
@@ -107,6 +108,15 @@ def experiments_marker(session_id: str, kind: str, timestamp: float, note: str =
 def experiments_markers(session_id: str) -> list[dict]:
     root = Path(__file__).resolve().parents[3] / "data" / "captures"
     return load_markers(root, session_id)
+
+@router.get("/experiments/repeatability")
+def experiments_repeatability(align_to: str = "START", window_before: float = 5.0, window_after: float = 15.0) -> dict:
+    root = Path(__file__).resolve().parents[3] / "data" / "captures"
+    try:
+        return repeatability(root, load_sessions(root), align_to, window_before, window_after)
+    except ValueError as exc:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=409, detail=str(exc))
 
 @router.get("/experiments/divergence")
 def experiments_divergence(a_session_id: str, b_session_id: str, align_to: str | None = None, window_before: float = 5.0, window_after: float = 15.0) -> dict:
