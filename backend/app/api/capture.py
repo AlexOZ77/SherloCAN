@@ -9,6 +9,7 @@ from ..capture.j2534.channel_test import run_channel_test
 from ..capture.j2534.controller import CaptureRequest, run_bounded_capture
 from ..capture.j2534.atomic_capture import AtomicCaptureRequest, run_atomic_capture
 from ..capture.experiments import load_sessions, save_session, compare_sessions
+from ..capture.divergence import first_divergence
 
 router = APIRouter(prefix="/capture", tags=["capture"])
 
@@ -95,6 +96,17 @@ def experiments_compare(a_session_id: str, b_session_id: str) -> dict:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="both registered sessions are required")
     return compare_sessions(a, b)
+
+@router.get("/experiments/divergence")
+def experiments_divergence(a_session_id: str, b_session_id: str) -> dict:
+    root = Path(__file__).resolve().parents[3] / "data" / "captures"
+    sessions = load_sessions(root)
+    a = next((s for s in sessions if s["session_id"] == a_session_id), None)
+    b = next((s for s in sessions if s["session_id"] == b_session_id), None)
+    if not a or not b:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="both registered sessions are required")
+    return first_divergence(a["evidence"]["raw_path"], b["evidence"]["raw_path"])
 
 def _load_fixture(name: str):
     root = Path(__file__).resolve().parents[3]
