@@ -96,3 +96,22 @@ SherloCAN должен сравнивать наблюдаемые измене�
 - добавлены session_id и UTC timestamps;
 - добавлен тест метаданных с mock hardware boundary;
 - UI-карточка уже совместима с возвращаемым блоком evidence.
+
+## 11. Атомарный аппаратный захват
+После командного design review добавлен endpoint **POST /api/capture/j2534/atomic-capture**. Это предпочтительный аппаратный путь: оператор больше не должен передавать или повторно использовать `channel_id`.
+
+Один запрос владеет полным жизненным циклом:
+`Provider select → PassThruOpen → raw CAN PassThruConnect → bounded Capture → PassThruDisconnect → PassThruClose → Evidence`.
+
+Очистка выполняется в `finally`: даже при ошибке чтения SherloCAN отдельно пытается закрыть CAN channel и J2534 device. Ответ содержит `disconnected_cleanly`, `device_closed_cleanly`, `error` и `transmit_performed=false`.
+
+### Как использовать
+Перед START CAPTURE оператор обязан выбрать зарегистрированный provider и явно указать подтверждённый bitrate. `max_frames` и `timeout_ms` ограничивают сеанс. Успешный Connect сам по себе не означает наличие трафика: это подтверждается только `frames_observed > 0`.
+
+### Изменения цикла 011
+- проведён design review до реализации;
+- создан атомарный hardware lifecycle;
+- channel_id исключается из пользовательского сценария;
+- cleanup-состояния стали частью evidence metadata;
+- добавлен mock-тест, подтверждающий Disconnect и Close;
+- активная передача сообщений не добавлялась.
