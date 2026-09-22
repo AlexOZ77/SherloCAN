@@ -10,6 +10,7 @@ from ..capture.j2534.controller import CaptureRequest, run_bounded_capture
 from ..capture.j2534.atomic_capture import AtomicCaptureRequest, run_atomic_capture
 from ..capture.experiments import load_sessions, save_session, compare_sessions
 from ..capture.divergence import first_divergence
+from ..capture.markers import add_marker, load_markers, marker_time
 
 router = APIRouter(prefix="/capture", tags=["capture"])
 
@@ -97,8 +98,18 @@ def experiments_compare(a_session_id: str, b_session_id: str) -> dict:
         raise HTTPException(status_code=404, detail="both registered sessions are required")
     return compare_sessions(a, b)
 
+@router.post("/experiments/marker")
+def experiments_marker(session_id: str, kind: str, timestamp: float, note: str = "") -> dict:
+    root = Path(__file__).resolve().parents[3] / "data" / "captures"
+    return add_marker(root, session_id, kind, timestamp, note)
+
+@router.get("/experiments/markers")
+def experiments_markers(session_id: str) -> list[dict]:
+    root = Path(__file__).resolve().parents[3] / "data" / "captures"
+    return load_markers(root, session_id)
+
 @router.get("/experiments/divergence")
-def experiments_divergence(a_session_id: str, b_session_id: str) -> dict:
+def experiments_divergence(a_session_id: str, b_session_id: str, align_to: str | None = None, window_before: float = 5.0, window_after: float = 15.0) -> dict:
     root = Path(__file__).resolve().parents[3] / "data" / "captures"
     sessions = load_sessions(root)
     a = next((s for s in sessions if s["session_id"] == a_session_id), None)
@@ -106,7 +117,12 @@ def experiments_divergence(a_session_id: str, b_session_id: str) -> dict:
     if not a or not b:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="both registered sessions are required")
-    return first_divergence(a["evidence"]["raw_path"], b["evidence"]["raw_path"])
+    a_anchor = marker_time(root, a_session_id, align_to) if align_to else 0.0
+    b_anchor = marker_time(root, b_session_id, align_to) if align_to else 0.0
+    if align_to and (a_anchor is None or b_anchor is None):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=409, detail=f"marker {align_to} is required in both sessions")
+    return first_divergence(a["evidence"]["raw_path"], b["evidence"]["raw_path"], a_anchor=a_anchor or 0.0, b_anchor=b_anchor or 0.0, window_before=window_before if align_to else None, window_after=window_after if align_to else None, anchor_kind=align_to)
 
 def _load_fixture(name: str):
     root = Path(__file__).resolve().parents[3]
