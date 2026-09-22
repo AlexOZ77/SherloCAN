@@ -4,6 +4,7 @@ from ..capture.anomaly import build_baseline, detect_long_gaps
 from ..capture.replay import FileReplayAdapter\nfrom ..capture.j2534 import J2534Adapter
 from ..capture.j2534.provider import probe_providers
 from ..capture.j2534.device_test import run_device_tests
+from ..capture.j2534.open_test import run_open_test
 
 router = APIRouter(prefix="/capture", tags=["capture"])
 
@@ -33,6 +34,11 @@ def j2534_devices() -> list[dict]:
 @router.get("/j2534/device-test")
 def j2534_device_test() -> list[dict]:
     return [r.to_dict() for r in run_device_tests()]
+
+@router.post("/j2534/open-test")
+def j2534_open_test(provider_index: int = 0) -> dict:
+    """Explicit hardware gate: PassThruOpen then immediate PassThruClose. No CAN channel is created."""
+    return run_open_test(provider_index).to_dict()
 
 def _load_fixture(name: str):
     root = Path(__file__).resolve().parents[3]
