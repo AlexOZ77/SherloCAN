@@ -11,15 +11,28 @@ router = APIRouter(prefix="/capture", tags=["capture"])
 def capabilities() -> dict:
     return {
         "mode": "application-read-only",
-        "adapters": ["file-replay"],
-        "j2534": "planned",
+        "adapters": ["file-replay", "j2534"],
+        "j2534": "preflight-enabled",
         "arbitrary_can_transmit": False,
     }
 
 @router.get("/adapters")
 def adapters() -> list[dict]:
-    adapter = FileReplayAdapter()
-    return [adapter.get_status()]
+    replay = FileReplayAdapter()
+    j2534 = J2534Adapter()
+    return [replay.get_status(), j2534.get_status()]
+
+@router.get("/j2534/providers")
+def j2534_providers() -> list[dict]:
+    return [{"name":p.name,"installed":p.installed,"role":p.role,"note":p.note} for p in probe_providers()]
+
+@router.get("/j2534/devices")
+def j2534_devices() -> list[dict]:
+    return J2534Adapter().discover()
+
+@router.get("/j2534/device-test")
+def j2534_device_test() -> list[dict]:
+    return [r.to_dict() for r in run_device_tests()]
 
 def _load_fixture(name: str):
     root = Path(__file__).resolve().parents[3]
