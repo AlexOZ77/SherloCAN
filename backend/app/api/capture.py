@@ -13,8 +13,18 @@ from ..capture.divergence import first_divergence
 from ..capture.markers import add_marker, load_markers, marker_time
 from ..capture.repeatability import repeatability
 from ..capture.hypotheses import evaluate_hypotheses
+from ..capture.openport_sd import validate_logcfg, build_obd01_template
 
 router = APIRouter(prefix="/capture", tags=["capture"])
+
+@router.post("/openport-sd/validate")
+def openport_sd_validate(text: str, filename: str = "logcfg.txt") -> dict:
+    return validate_logcfg(text, filename).__dict__
+
+@router.get("/openport-sd/template")
+def openport_sd_template(params: str = "rpm,speed,coolant") -> dict:
+    selected=[x.strip() for x in params.split(",") if x.strip()]
+    return {"filename":"logcfg.txt","content":build_obd01_template(selected),"mode":"ACTIVE_OBD_PARAMETER_LOGGING","passive_raw_can":False}
 
 @router.get("/capabilities")
 def capabilities() -> dict:
