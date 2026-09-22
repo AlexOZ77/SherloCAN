@@ -1,0 +1,9 @@
+timestamp,can_id,data,channel,is_extended
+0.000,0x120,01020304,primary_can,false
+0.010,0x120,01020305,primary_can,false
+0.020,0x120,01020306,primary_can,false
+0.030,0x120,01020307,primary_can,false
+0.000,0x351,AABB,primary_can,false
+0.020,0x351,AABC,primary_can,false
+0.040,0x351,AABD,primary_can,false
+0.060,0x351,AABE,primary_can,false
