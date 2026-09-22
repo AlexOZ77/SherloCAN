@@ -12,6 +12,7 @@ from ..capture.experiments import load_sessions, save_session, compare_sessions
 from ..capture.divergence import first_divergence
 from ..capture.markers import add_marker, load_markers, marker_time
 from ..capture.repeatability import repeatability
+from ..capture.hypotheses import evaluate_hypotheses
 
 router = APIRouter(prefix="/capture", tags=["capture"])
 
@@ -108,6 +109,15 @@ def experiments_marker(session_id: str, kind: str, timestamp: float, note: str =
 def experiments_markers(session_id: str) -> list[dict]:
     root = Path(__file__).resolve().parents[3] / "data" / "captures"
     return load_markers(root, session_id)
+
+@router.get("/experiments/hypotheses")
+def experiments_hypotheses() -> dict:
+    root = Path(__file__).resolve().parents[3] / "data" / "captures"
+    try:
+        rep = repeatability(root, load_sessions(root), "START", 5.0, 15.0)
+        return evaluate_hypotheses(rep)
+    except ValueError:
+        return evaluate_hypotheses({"signals":[]})
 
 @router.get("/experiments/repeatability")
 def experiments_repeatability(align_to: str = "START", window_before: float = 5.0, window_after: float = 15.0) -> dict:
