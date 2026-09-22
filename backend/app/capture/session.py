@@ -27,8 +27,9 @@ class CaptureSession:
     def ingest(self,frame:CANFrame):
         if self.state != CaptureState.CAPTURING: raise RuntimeError("session is not capturing")
         accepted=self.queue.put(frame)
-        self.flight.ingest(frame)
         self.frame_count += 1
+        if accepted:
+            self.flight.ingest(frame)
         return accepted
     def mark(self,timestamp:float,kind:str,note:str="")->EventWindow:
         return self.flight.mark(timestamp,kind,note)

@@ -1,0 +1,6 @@
+# Optional Windows hardware providers.
+# Kept separate so CI/demo mode never requires a J2534 DLL or Windows hardware.
+-r requirements.txt
+j2534-api==2.0.0
+python-can>=4.6,<5
+cantools>=40,<41

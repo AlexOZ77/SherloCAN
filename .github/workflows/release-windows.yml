@@ -1,0 +1,34 @@
+name: release-windows
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm install
+          npm run build
+      - name: Copy frontend into backend static
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force backend/app/static | Out-Null
+          Copy-Item frontend/dist/* backend/app/static -Recurse -Force
+      - name: Assemble portable source package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/SherloCAN-v0.2-alpha | Out-Null
+          Copy-Item backend,scripts,docs,vehicle_profiles,sample_data dist/SherloCAN-v0.2-alpha -Recurse
+          Copy-Item README.md dist/SherloCAN-v0.2-alpha/
+          Compress-Archive dist/SherloCAN-v0.2-alpha dist/SherloCAN-v0.2-alpha-windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SherloCAN-v0.2-alpha-windows
+          path: dist/SherloCAN-v0.2-alpha-windows.zip

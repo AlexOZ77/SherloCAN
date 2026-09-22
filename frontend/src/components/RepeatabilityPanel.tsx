@@ -1,0 +1,10 @@
+import {useState} from "react";import {RefreshCw} from "lucide-react";
+type Signal={can_id:string;kind:string;normal_trials_observed:number;normal_trials_total:number;fault_trials_observed:number;fault_trials_total:number;reproduced_in_all_fault_trials:boolean;median_fault_time:number|null};
+type Result={normal_trials:number;fault_trials:number;alignment:string;signals:Signal[];interpretation:string};
+export default function RepeatabilityPanel(){
+ const [r,setR]=useState<Result|null>(null),[msg,setMsg]=useState("");
+ const run=async()=>{setMsg("");const x=await fetch("/api/capture/experiments/repeatability?align_to=START&window_before=5&window_after=15");if(!x.ok){setR(null);setMsg("Нужны минимум A1/A2 и B1/B2 с START marker.");return}setR(await x.json())};
+ return <section className="panel repeatPanel"><div className="pt"><div><RefreshCw/><b>Повторяемость Aₙ / Bₙ</b></div><span>{r?(r.normal_trials+" NORMAL · "+r.fault_trials+" FAULT"):"NOT ANALYZED"}</span></div>
+ <div className="repeatIntro"><p>Ищем наблюдения, воспроизводимые в нескольких FAULT-сеансах после выравнивания по START.</p><button onClick={run}><RefreshCw/>АНАЛИЗ ПОВТОРЯЕМОСТИ</button></div>{msg&&<p className="abMessage">{msg}</p>}
+ {r&&<div className="repeatTable"><table><thead><tr><th>CAN ID</th><th>EVENT</th><th>NORMAL</th><th>FAULT</th><th>MEDIAN t</th><th>STATUS</th></tr></thead><tbody>{r.signals.map((s,i)=><tr key={i}><td className="mono">{s.can_id}</td><td>{s.kind}</td><td>{s.normal_trials_observed}/{s.normal_trials_total}</td><td>{s.fault_trials_observed}/{s.fault_trials_total}</td><td>{s.median_fault_time==null?"—":((s.median_fault_time>=0?"+":"")+(s.median_fault_time*1000).toFixed(0)+" ms")}</td><td>{s.reproduced_in_all_fault_trials?"REPEATED IN ALL B":"PARTIAL"}</td></tr>)}</tbody></table><p>{r.interpretation}</p></div>}</section>
+}
