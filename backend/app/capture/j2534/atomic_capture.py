@@ -44,7 +44,7 @@ def run_atomic_capture(request:AtomicCaptureRequest,root:Path)->dict:
         if device_id not in (None,False):
             try: closed=pt_close(device_id) is not False
             except Exception: closed=False
-    return {
+    result = {
         "session_id":session_id,"started_at":started.isoformat(),
         "completed_at":datetime.now(timezone.utc).isoformat(),
         "request":asdict(request),"device_opened":device_id not in (None,False),
@@ -52,3 +52,5 @@ def run_atomic_capture(request:AtomicCaptureRequest,root:Path)->dict:
         "disconnected_cleanly":disconnected,"device_closed_cleanly":closed,
         "evidence":evidence,"error":error,"transmit_performed":False,
     }
+    (root / f"{session_id}.session.json").write_text(__import__("json").dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    return result
