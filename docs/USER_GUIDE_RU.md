@@ -82,3 +82,17 @@ SherloCAN должен сравнивать наблюдаемые измене�
 - добавлен UI-компонент Capture Evidence;
 - добавлены состояния «измерений ещё нет», «без зарегистрированных потерь» и «CAPTURE DATA LOSS»;
 - карточка пока подключена в безопасном состоянии `result=null`: реальные числа появятся только после session API, а не из mock/demo данных.
+
+## 10. Bounded Capture Session API
+Добавлен контроллер одного ограниченного сеанса захвата и endpoint **POST /api/capture/j2534/capture**. Он принимает только явные параметры: provider index, уже открытый channel ID, bitrate, timeout и максимальное число кадров.
+
+Каждый запуск получает уникальный **session_id**, UTC-время начала/окончания и отдельный RAW CSV в `data/captures`. Ответ содержит блок `evidence`, предназначенный для прямой передачи в Capture Evidence Card.
+
+Важно: endpoint не выбирает bitrate автоматически и не открывает канал скрытно. На текущем этапе он рассчитан на уже открытый raw CAN channel; жизненный цикл Open→Connect→Capture→Disconnect будет объединён следующим контроллером, чтобы исключить ручную передачу устаревшего channel ID.
+
+### Изменения цикла 010
+- создан CaptureRequest и bounded session controller;
+- добавлен API одного ограниченного capture-сеанса;
+- добавлены session_id и UTC timestamps;
+- добавлен тест метаданных с mock hardware boundary;
+- UI-карточка уже совместима с возвращаемым блоком evidence.
