@@ -14,8 +14,26 @@ from ..capture.markers import add_marker, load_markers, marker_time
 from ..capture.repeatability import repeatability
 from ..capture.hypotheses import evaluate_hypotheses
 from ..capture.openport_sd import validate_logcfg, build_obd01_template
+from ..capture.sd_import import inspect_sd_logs, import_sd_log
 
 router = APIRouter(prefix="/capture", tags=["capture"])
+
+@router.get("/openport-sd/logs")
+def openport_sd_logs(folder: str) -> list[dict]:
+    try:
+        return inspect_sd_logs(Path(folder))
+    except ValueError as exc:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=str(exc))
+
+@router.post("/openport-sd/import")
+def openport_sd_import(path: str) -> dict:
+    try:
+        root = Path(__file__).resolve().parents[3] / "data" / "captures"
+        return import_sd_log(Path(path), root)
+    except ValueError as exc:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=str(exc))
 
 @router.post("/openport-sd/validate")
 def openport_sd_validate(text: str, filename: str = "logcfg.txt") -> dict:
