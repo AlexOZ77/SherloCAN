@@ -314,3 +314,20 @@ OpenPort 2.0 standalone logging использует файл `logcfg.txt` в к
 - добавлена загрузка/редактирование/валидация/сохранение logcfg.txt;
 - активный OBD режим отделён от passive RAW CAN;
 - добавлены safety tests.
+
+## 20. OpenPort SD Import → Evidence
+Вкладка OpenPort SD расширена вторым этапом **ИМПОРТ ЛОГОВ**. Оператор указывает путь к подключённой microSD/папке, SherloCAN сканирует поддерживаемые файлы `.csv`, `.log`, `.txt` (исключая `logcfg.txt`) и показывает имя, размер, формат и SHA-256.
+
+При **IMPORT → EVIDENCE** исходный файл не изменяется. Создаётся отдельная evidence-copy в `data/captures/sd_imports/<session_id>/`, рассчитывается SHA-256 и сохраняется `import.json` с provenance: original path/name, evidence path, size, hash, import time и source kind `OPENPORT_SD_IMPORT`.
+
+### Важное ограничение
+Импорт файла ещё не означает, что SherloCAN знает его структуру. В цикле 020 metadata устанавливает `parsed=false`; программа не выдумывает CAN ID/timestamp/семантику неизвестного формата. Следующий этап — format detection/parsers только для реально подтверждённых OpenPort output formats, после чего импорт можно будет конвертировать в стандартный RAW Evidence и назначать A1/A2/A3/B1/B2/B3.
+
+### Изменения цикла 020
+- SD folder scan;
+- список автономных логов;
+- SHA-256 до импорта;
+- immutable evidence-copy;
+- provenance metadata import.json;
+- UI PREPARE / IMPORT;
+- тест сохранности исходника и SHA-256.
