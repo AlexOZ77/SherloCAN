@@ -1,5 +1,6 @@
 import {useEffect,useState} from "react";
 import {Activity,Car,FileSearch,Network,Radio,ShieldCheck,TimerReset,TriangleAlert,Wrench} from "lucide-react";
+import OpenPortCard from "./components/OpenPortCard";
 
 type Demo={synthetic:boolean;vehicle_label:string;source:string;safety:string;baseline:Record<string,{count:number;median_period_ms:number|null;typical_dlc:number}>;anomalies:{kind:string;can_id:string;timestamp:number;detail:string;ecu_owner:string}[];interpretation:string};
 const nav=[["Overview",Activity],["Capture",Radio],["Network",Network],["Timeline",TimerReset],["Evidence",ShieldCheck],["Sherlock",FileSearch],["Crash",TriangleAlert]];
@@ -15,7 +16,7 @@ export default function App(){
   </aside>
   <main><header><div><p className="eyebrow">FIRST RUNNABLE SLICE / SYNTHETIC DATA</p><h1>Capture & Investigate</h1></div><div className="vehicle"><Car size={18}/><div><b>Nissan Qashqai J11</b><span>synthetic fixture · no ECU mapping inferred</span></div></div></header>
    <section className="statusbar"><Status label="SOURCE" value={demo?.source||"Connecting…"} sub="OpenPort/J2534 gated"/><Status label="DATA" value={demo?"LOADED":"WAITING"} sub="synthetic fixture"/><Status label="BASELINE IDS" value={String(rows.length)} sub="measured from NORMAL"/><Status label="ANOMALIES" value={String(demo?.anomalies.length??0)} sub={error||"deterministic analysis"}/></section>
-   <section className="workspace"><div className="left">
+   <OpenPortCard/><section className="workspace"><div className="left">
     <div className="panel capture"><PanelTitle icon={<Radio/>} title="Replay Analysis" meta="NORMAL → FAULT"/><div className="wave"><div className="grid"/><div className="pulse p1"/><div className="pulse p2"/><div className="pulse p3"/>{anomaly&&<div className="event"><span>LONG GAP</span></div>}</div><div className="controls"><button className="danger"><TriangleAlert size={16}/> MARK FAULT</button><button><Wrench size={16}/> WIGGLE</button><button>+ MARKER</button><span className="clock">{demo?"API CONNECTED":"CONNECTING"}</span></div></div>
     <div className="panel"><PanelTitle icon={<Activity/>} title="Measured Baseline" meta="synthetic NORMAL"/><table><thead><tr><th>CAN ID</th><th>STATE</th><th>MEDIAN PERIOD</th><th>DLC</th></tr></thead><tbody>{rows.map(([id,x])=><tr key={id} className={anomaly?.can_id===id?"warn":""}><td className="mono">{id}</td><td><i/>MEASURED</td><td>{x.median_period_ms??"—"} ms</td><td>{x.typical_dlc}</td></tr>)}</tbody></table></div>
    </div><div className="right">
