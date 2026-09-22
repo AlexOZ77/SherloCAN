@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from ..capture.anomaly import build_baseline, detect_long_gaps
 from ..capture.replay import FileReplayAdapter\nfrom ..capture.j2534 import J2534Adapter
 from ..capture.j2534.provider import probe_providers
+from ..capture.j2534.device_test import run_device_tests
 
 router = APIRouter(prefix="/capture", tags=["capture"])
 
