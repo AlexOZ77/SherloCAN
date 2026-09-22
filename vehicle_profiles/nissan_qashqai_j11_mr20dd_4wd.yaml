@@ -1,0 +1,22 @@
+profile:
+  manufacturer: Nissan
+  model: Qashqai
+  generation: J11
+  year: 2014
+  engine: MR20DD
+  transmission: CVT
+  drivetrain: 4WD
+  market: Europe/UK
+  evidence_status: USER_OBSERVATION
+
+buses:
+  - id: primary_can
+    name: Primary CAN
+    protocol: CAN
+    bitrate: UNKNOWN
+    can_h_pin: UNKNOWN
+    can_l_pin: UNKNOWN
+    evidence_status: UNKNOWN
+
+notes:
+  - "Do not infer CAN IDs, ECU ownership, bitrate or pinout without documented or measured evidence."
