@@ -15,8 +15,13 @@ from ..capture.repeatability import repeatability
 from ..capture.hypotheses import evaluate_hypotheses
 from ..capture.openport_sd import validate_logcfg, build_obd01_template
 from ..capture.sd_import import inspect_sd_logs, import_sd_log
+from ..capture.sd_detect import discover_windows_candidates
 
 router = APIRouter(prefix="/capture", tags=["capture"])
+
+@router.get("/openport-sd/drives")
+def openport_sd_drives() -> list[dict]:
+    return discover_windows_candidates()
 
 @router.get("/openport-sd/logs")
 def openport_sd_logs(folder: str) -> list[dict]:
