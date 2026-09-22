@@ -7,6 +7,7 @@ from ..capture.j2534.device_test import run_device_tests
 from ..capture.j2534.open_test import run_open_test
 from ..capture.j2534.channel_test import run_channel_test
 from ..capture.j2534.controller import CaptureRequest, run_bounded_capture
+from ..capture.j2534.atomic_capture import AtomicCaptureRequest, run_atomic_capture
 
 router = APIRouter(prefix="/capture", tags=["capture"])
 
@@ -59,6 +60,13 @@ def j2534_capture(provider_index: int, channel_id: int, bitrate: int, timeout_ms
     request = CaptureRequest(provider_index=provider_index, channel_id=channel_id, bitrate=bitrate, timeout_ms=timeout_ms, max_frames=max_frames)
     root = Path(__file__).resolve().parents[3] / "data" / "captures"
     return run_bounded_capture(request, root)
+
+@router.post("/j2534/atomic-capture")
+def j2534_atomic_capture(provider_index: int, bitrate: int, timeout_ms: int = 100, max_frames: int = 1000) -> dict:
+    """Own Open→Connect→bounded Capture→Disconnect→Close in one request."""
+    request = AtomicCaptureRequest(provider_index=provider_index, bitrate=bitrate, timeout_ms=timeout_ms, max_frames=max_frames)
+    root = Path(__file__).resolve().parents[3] / "data" / "captures"
+    return run_atomic_capture(request, root)
 
 def _load_fixture(name: str):
     root = Path(__file__).resolve().parents[3]
