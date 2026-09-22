@@ -2,6 +2,7 @@ from pathlib import Path
 from fastapi import APIRouter
 from ..capture.anomaly import build_baseline, detect_long_gaps
 from ..capture.replay import FileReplayAdapter\nfrom ..capture.j2534 import J2534Adapter
+from ..capture.j2534.provider import probe_providers
 
 router = APIRouter(prefix="/capture", tags=["capture"])
 
