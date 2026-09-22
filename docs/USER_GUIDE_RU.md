@@ -229,3 +229,31 @@ Marker timestamp является **операторским наблюдени�
 - API блокирует aligned-анализ без обоих START;
 - добавлен моделирующий backend test;
 - оформлен командный test walkthrough.
+
+## 17. Повторяемость A1/A2/A3 ↔ B1/B2/B3
+Добавлен Repeatability Engine. При сохранении NORMAL_A/FAULT_B оператор задаёт **номер повтора**. Рекомендуемый первый набор: A1, A2, A3 и B1, B2, B3. Каждая сессия должна иметь собственный START marker.
+
+### Порядок теста
+1. Трижды выполнить NORMAL-сценарий и сохранить captures как A1, A2, A3.
+2. Для каждой A-сессии зарегистрировать фактический START timestamp.
+3. Трижды выполнить FAULT-сценарий OFF → ON → START и сохранить B1, B2, B3.
+4. Для каждой B-сессии зарегистрировать START.
+5. Нажать **АНАЛИЗ ПОВТОРЯЕМОСТИ**. Минимум для запуска движка — две нумерованные A и две B; для рабочего P0603-протокола рекомендуются 3+3.
+6. SherloCAN выполняет попарные START-aligned сравнения и агрегирует наблюдения по CAN ID + event type.
+7. В таблице выводятся NORMAL n/N, FAULT n/N, median relative time и статус **REPEATED IN ALL B / PARTIAL**.
+
+**REPEATED IN ALL B** означает только то, что наблюдение воспроизвелось во всех зарегистрированных FAULT trials. Это не означает, что CAN ID принадлежит ECM/ABS, и не доказывает root cause.
+
+### Командная симуляция
+Протокол `docs/TEAM_SIMULATION_017.md` моделирует шесть файлов с разными абсолютными START. Synthetic 0x200/+420 ms и 0x300/+440 ms присутствуют во всех B и отсутствуют в A. Автотест ожидает 3/3 воспроизводимость после индивидуального START alignment. Эти значения — тестовые фикстуры, не данные автомобиля.
+
+### Изменения цикла 017
+- numbered trial для NORMAL_A/FAULT_B;
+- Repeatability Engine;
+- START-aligned pairwise aggregation;
+- REPEATED IN ALL B / PARTIAL;
+- median relative event time;
+- endpoint repeatability;
+- UI Repeatability Panel;
+- automated six-trial simulation test;
+- командный test walkthrough.
