@@ -10,14 +10,15 @@ type Comparison={a_session_id:string;b_session_id:string;a_data_loss:boolean;b_d
 export default function ExperimentAB({current}:{current:AtomicCaptureResult|null}){
  const [sessions,setSessions]=useState<Saved[]>([]),[comparison,setComparison]=useState<Comparison|null>(null),[divergence,setDivergence]=useState<Divergence|null>(null),[message,setMessage]=useState(""),[markerTime,setMarkerTime]=useState(""),[trial,setTrial]=useState("1");
  const refresh=()=>fetch("/api/capture/experiments").then(r=>r.json()).then(setSessions).catch(()=>setSessions([]));
- useEffect(refresh,[]);
+ useEffect(()=>{void refresh();},[]);
  const save=async(role:"NORMAL_A"|"FAULT_B")=>{
   if(!current){setMessage("Сначала выполните аппаратный capture.");return}
   const q=new URLSearchParams({session_id:current.session_id,role,trial});
   const r=await fetch("/api/capture/experiments/save?"+q,{method:"POST"});
   if(!r.ok){setMessage("Сохранение сессии пока недоступно.");return} setMessage(role+" сохранена");refresh();
  };
- const a=sessions.filter(x=>x.role==="NORMAL_A").at(-1),b=sessions.filter(x=>x.role==="FAULT_B").at(-1);
+ const normalSessions=sessions.filter(x=>x.role==="NORMAL_A"),faultSessions=sessions.filter(x=>x.role==="FAULT_B");
+ const a=normalSessions[normalSessions.length-1],b=faultSessions[faultSessions.length-1];
  const markStart=async(session?:Saved)=>{const t=Number(markerTime);if(!session||!Number.isFinite(t)||t<0){setMessage("Выберите сессию и укажите timestamp START.");return}const q=new URLSearchParams({session_id:session.session_id,kind:"START",timestamp:String(t)});const r=await fetch("/api/capture/experiments/marker?"+q,{method:"POST"});setMessage(r.ok?"START marker сохранён":"Ошибка marker API")};
  const compare=async()=>{if(!a||!b)return;const q=new URLSearchParams({a_session_id:a.session_id,b_session_id:b.session_id,align_to:"START",window_before:"5",window_after:"15"});const [r,d]=await Promise.all([fetch("/api/capture/experiments/compare?"+q),fetch("/api/capture/experiments/divergence?"+q)]);if(r.ok)setComparison(await r.json());if(d.ok)setDivergence(await d.json())};
  return <section className="panel experimentAB">
