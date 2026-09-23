@@ -23,3 +23,16 @@ def test_repeatability_six_modelled_trials(tmp_path):
     assert sig[("0x200","NEW_ID")]["reproduced_in_all_fault_trials"] is True
     assert sig[("0x300","NEW_ID")]["fault_trials_observed"]==3
     assert r["interpretation"].startswith("Repeatability")
+
+def test_repeatability_blocks_data_loss(tmp_path):
+    sessions=[]
+    for role,prefix,fault in [("NORMAL_A","A",False),("FAULT_B","B",True)]:
+        for trial in range(1,3):
+            path=tmp_path/f"{prefix}{trial}.csv";start=trial*10+(100 if fault else 0);raw(path,start,fault)
+            item=s(prefix+str(trial),path)
+            if role=="FAULT_B" and trial==2: item["evidence"]["capture_data_loss"]=True
+            sessions.append(save_session(tmp_path,item,role,trial=trial))
+            add_marker(tmp_path,prefix+str(trial),"START",start)
+    r=repeatability(tmp_path,sessions)
+    assert r["status"]=="BLOCKED_DATA_LOSS"
+    assert "B2" in r["sessions"]
