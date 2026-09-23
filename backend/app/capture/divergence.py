@@ -3,7 +3,7 @@ import csv
 from collections import defaultdict
 from dataclasses import asdict,dataclass
 from pathlib import Path
-from statistics import median
+from statistics import median\nfrom .timing_stats import timing_summary
 
 @dataclass(frozen=True,slots=True)
 class IDTiming:
@@ -21,7 +21,9 @@ def load_timing(path:str|Path, offset:float=0.0, window_before:float|None=None, 
     for cid,items in groups.items():
         items.sort(); ts=[x[0] for x in items]; periods=[b-a for a,b in zip(ts,ts[1:]) if b>=a]
         span=ts[-1]-ts[0]; freq=(len(ts)-1)/span if len(ts)>1 and span>0 else None
-        out[cid]=IDTiming(cid,len(ts),ts[0],ts[-1],median(periods) if periods else None,freq,int(median([x[1] for x in items])))
+        stats=timing_summary(ts)
+        out[cid]=IDTiming(cid,len(ts),ts[0],ts[-1],stats["median_period"],freq,int(median([x[1] for x in items])),
+                          stats["period_count"],stats["mad_period"],stats["iqr_period"])
     return out
 
 def first_divergence(a_path:str|Path,b_path:str|Path,period_ratio:float=1.5,frequency_ratio:float=1.5,a_anchor:float=0.0,b_anchor:float=0.0,window_before:float|None=None,window_after:float|None=None,anchor_kind:str|None=None)->dict:
