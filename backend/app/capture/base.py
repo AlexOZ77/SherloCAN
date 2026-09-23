@@ -11,10 +11,13 @@ class CANFrame:
     data: bytes
     channel: str = "primary_can"
     is_extended: bool = False
+    dlc: int | None = None
 
-    @property
-    def dlc(self) -> int:
-        return len(self.data)
+    def __post_init__(self) -> None:
+        if self.dlc is None:
+            object.__setattr__(self, "dlc", len(self.data))
+        elif self.dlc < 0:
+            raise ValueError("dlc must be non-negative")
 
 class CaptureAdapter(ABC):
     """Read-only capture source contract for SherloCAN."""
