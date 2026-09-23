@@ -18,7 +18,11 @@ def save_session(root:Path,session:dict,role:str,note:str="",trial:int|None=None
     if not session.get("session_id"): raise ValueError("session_id is required")
     if trial is not None and trial < 1: raise ValueError("trial must be >= 1")
     root.mkdir(parents=True,exist_ok=True)
-    rows=[x for x in load_sessions(root) if x["session_id"]!=session["session_id"]]
+    existing=load_sessions(root)
+    duplicate=next((x for x in existing if x["session_id"]!=session["session_id"] and trial is not None and x.get("role")==role and x.get("trial")==trial),None)
+    if duplicate:
+        raise ValueError(f"duplicate trial number for {role}: {trial}")
+    rows=[x for x in existing if x["session_id"]!=session["session_id"]]
     item={"session_id":session["session_id"],"role":role,"note":note,"saved_at":datetime.now(timezone.utc).isoformat(),
           "started_at":session.get("started_at"),"completed_at":session.get("completed_at"),
           "evidence":session.get("evidence"),"error":session.get("error"),"trial":trial}
