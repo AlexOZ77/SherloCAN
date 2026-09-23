@@ -18,6 +18,8 @@ class CaptureSession:
     id: str = field(default_factory=lambda: str(uuid4()))
     state: CaptureState = CaptureState.CREATED
     frame_count: int = 0
+    queue: FrameQueue = field(init=False)
+    flight: FlightRecorder = field(init=False)
 
     def __post_init__(self):
         self.queue=FrameQueue(self.queue_size)
