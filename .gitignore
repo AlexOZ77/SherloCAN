@@ -12,3 +12,6 @@ dist/
 .idea/
 data/captures/*
 !data/captures/.gitkeep
+
+# TypeScript build cache
+*.tsbuildinfo
