@@ -1,7 +1,8 @@
 from pathlib import Path
 from fastapi import APIRouter
 from ..capture.anomaly import build_baseline, detect_long_gaps
-from ..capture.replay import FileReplayAdapter\nfrom ..capture.j2534 import J2534Adapter
+from ..capture.replay import FileReplayAdapter
+from ..capture.j2534 import J2534Adapter
 from ..capture.j2534.provider import probe_providers
 from ..capture.j2534.device_test import run_device_tests
 from ..capture.j2534.open_test import run_open_test
@@ -17,7 +18,7 @@ from ..capture.openport_sd import validate_logcfg, build_obd01_template
 from ..capture.sd_import import inspect_sd_logs, import_sd_log
 from ..capture.sd_detect import discover_windows_candidates
 
-router = APIRouter(prefix="/capture", tags=["capture"])
+router = APIRouter(prefix="/api/capture", tags=["capture"])
 
 @router.get("/openport-sd/drives")
 def openport_sd_drives() -> list[dict]:
