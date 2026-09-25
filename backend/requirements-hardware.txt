@@ -1,6 +1,7 @@
-# Optional Windows hardware providers.
-# Kept separate so CI/demo mode never requires a J2534 DLL or Windows hardware.
+# Windows hardware providers for SherloCAN vehicle-test builds.
+# j2534-api 2.0.0 is not published on PyPI as of this release, so the
+# verified upstream source is pinned by commit for reproducibility.
 -r requirements.txt
-j2534-api==2.0.0
+j2534-api @ git+https://github.com/keenanlaws/Python-J2534-Interface.git@f6a79b276e05c5fdb34d52fded790357ad0fb202
 python-can>=4.6,<5
 cantools>=40,<41
