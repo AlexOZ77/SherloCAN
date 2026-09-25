@@ -9,18 +9,22 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
+
       - name: Build frontend
         working-directory: frontend
         run: |
           npm install --no-audit --no-fund
           npm run typecheck
           npm run build
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Verify backend
         working-directory: backend
         run: |
@@ -28,24 +32,36 @@ jobs:
           pip install -r requirements.txt
           python -m compileall -q app
           python -m pytest -q
-      - name: Verify Windows hardware dependencies
-        working-directory: backend
+
+      - name: Build offline dependency wheelhouse
+        shell: pwsh
         run: |
-          pip install -r requirements-hardware.txt
-          python -c "import J2534; print('J2534 import OK')"
+          New-Item -ItemType Directory -Force vendor | Out-Null
+          python -m pip wheel -r backend/requirements.txt -w vendor
+          python -m pip wheel "python-can>=4.6,<5" "cantools>=40,<41" -w vendor
+          python -m pip wheel --no-deps "git+https://github.com/keenanlaws/Python-J2534-Interface.git@f6a79b276e05c5fdb34d52fded790357ad0fb202#egg=j2534-api" -w vendor
+
+      - name: Verify Windows hardware dependencies
+        shell: pwsh
+        run: |
+          pip install --no-index --find-links vendor "j2534-api==2.0.0" "python-can>=4.6,<5" "cantools>=40,<41"
+          python -c "import J2534; print('J2534 import OK', J2534.__version__)"
           python -c "import can, cantools; print('python-can/cantools import OK')"
+
       - name: Copy frontend into backend static
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force backend/app/static | Out-Null
           Copy-Item frontend/dist/* backend/app/static -Recurse -Force
+
       - name: Assemble vehicle-test package
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist/SherloCAN-v0.2.1-vehicle-test | Out-Null
-          Copy-Item backend,scripts,docs,vehicle_profiles,sample_data dist/SherloCAN-v0.2.1-vehicle-test -Recurse
+          Copy-Item backend,scripts,docs,vehicle_profiles,sample_data,vendor dist/SherloCAN-v0.2.1-vehicle-test -Recurse
           Copy-Item README.md dist/SherloCAN-v0.2.1-vehicle-test/
           Compress-Archive dist/SherloCAN-v0.2.1-vehicle-test dist/SherloCAN-v0.2.1-vehicle-test-windows.zip
+
       - uses: actions/upload-artifact@v4
         with:
           name: SherloCAN-v0.2.1-vehicle-test-windows
