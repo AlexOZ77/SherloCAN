@@ -14,6 +14,9 @@ from ..capture.divergence import first_divergence
 from ..capture.markers import add_marker, load_markers, marker_time
 from ..capture.repeatability import repeatability
 from ..capture.hypotheses import evaluate_hypotheses
+from ..capture.experiment_protocol import ExperimentProtocol
+from ..capture.acceptance import assess_capture
+from ..capture.evidence_manifest import build_evidence_manifest
 from ..capture.openport_sd import validate_logcfg, build_obd01_template
 from ..capture.sd_import import inspect_sd_logs, import_sd_log
 from ..capture.sd_detect import discover_windows_candidates
@@ -101,11 +104,44 @@ def j2534_capture(provider_index: int, channel_id: int, bitrate: int, timeout_ms
     return run_bounded_capture(request, root)
 
 @router.post("/j2534/atomic-capture")
-def j2534_atomic_capture(provider_index: int, bitrate: int, timeout_ms: int = 100, max_frames: int = 1000) -> dict:
-    """Own Open→Connect→bounded Capture→Disconnect→Close in one request."""
+def j2534_atomic_capture(
+    provider_index: int,
+    bitrate: int,
+    timeout_ms: int = 100,
+    max_frames: int = 1000,
+    scenario: str = "CONTROL",
+    trial: int = 1,
+    ignition_state: str = "UNKNOWN",
+    engine_state: str = "UNKNOWN",
+    battery_voltage_v: float | None = None,
+    bitrate_source: str = "",
+    operator_note: str = "",
+) -> dict:
+    """Own Open→Connect→bounded Capture→Disconnect→Close and bind the result to an experiment protocol."""
+    from fastapi import HTTPException
+    if scenario not in {"NORMAL_A","FAULT_B","WIGGLE","CONTROL"}:
+        raise HTTPException(status_code=400, detail="scenario must be NORMAL_A, FAULT_B, WIGGLE or CONTROL")
+    try:
+        protocol = ExperimentProtocol(
+            scenario=scenario, trial=trial, ignition_state=ignition_state, engine_state=engine_state,
+            battery_voltage_v=battery_voltage_v, bitrate=bitrate, bitrate_source=bitrate_source,
+            provider_index=provider_index, max_frames=max_frames, timeout_ms=timeout_ms, operator_note=operator_note,
+        )
+        protocol_dict = protocol.to_dict()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     request = AtomicCaptureRequest(provider_index=provider_index, bitrate=bitrate, timeout_ms=timeout_ms, max_frames=max_frames)
     root = Path(__file__).resolve().parents[3] / "data" / "captures"
-    return run_atomic_capture(request, root)
+    result = run_atomic_capture(request, root)
+    acceptance = assess_capture(result)
+    manifest = build_evidence_manifest(result, protocol_dict, acceptance)
+    result["protocol"] = protocol_dict
+    result["acceptance"] = acceptance
+    result["evidence_manifest"] = manifest
+    import json
+    (root / f"{result['session_id']}.manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    (root / f"{result['session_id']}.session.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    return result
 
 @router.get("/experiments")
 def experiments_list() -> list[dict]:

@@ -356,3 +356,17 @@ OpenPort 2.0 standalone logging использует файл `logcfg.txt` в к
 - detection metadata включена в SD scan/import;
 - UI показывает classification/confidence;
 - regression tests не дают parameter CSV превратиться в RAW CAN.
+
+
+## 22. Diagnostic Experiment Discipline v0.2.1
+Введён формальный контур диагностического эксперимента. Перед аппаратным тестом фиксируются scenario/trial, состояния ignition/engine, provider, подтверждённый bitrate и источник этого значения, ограничения capture и, если измерено, напряжение АКБ. SherloCAN по-прежнему не угадывает bitrate.
+
+После capture применяется Acceptance Gate: Device Open, CAN Channel, Observed > 0, отсутствие DATA LOSS, RAW, SHA-256, clean Disconnect/Close и отсутствие намеренной передачи. FAIL блокирует использование сессии для выводов о повторяемости.
+
+Repeatability исправлен: событие считается один раз на FAULT trial, времена B не дублируются по всем A×B сравнениям, отдельно отмечается A-within-A instability, DATA LOSS блокирует анализ, дубли trial запрещены.
+
+Timing теперь хранит не только median period, но также число периодов, MAD и IQR. Эти значения описывают разброс наблюдений и не устанавливают ECU ownership или root cause.
+
+Hypothesis Manager ужесточён: повторяемая CAN divergence сама по себе оставляет гипотезу INCONCLUSIVE. SUPPORTED/CONTRADICTED допускаются только при явном direct-test evidence. Автоматического CONFIRMED нет.
+
+Подробная пошаговая процедура с PASS/FAIL, expected result и troubleshooting: `docs/DIAGNOSTIC_EXPERIMENT_PROCEDURE.md`.
