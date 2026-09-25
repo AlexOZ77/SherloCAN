@@ -28,19 +28,25 @@ jobs:
           pip install -r requirements.txt
           python -m compileall -q app
           python -m pytest -q
+      - name: Verify Windows hardware dependencies
+        working-directory: backend
+        run: |
+          pip install -r requirements-hardware.txt
+          python -c "import J2534; print('J2534 import OK')"
+          python -c "import can, cantools; print('python-can/cantools import OK')"
       - name: Copy frontend into backend static
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force backend/app/static | Out-Null
           Copy-Item frontend/dist/* backend/app/static -Recurse -Force
-      - name: Assemble portable source package
+      - name: Assemble vehicle-test package
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force dist/SherloCAN-v0.2-alpha | Out-Null
-          Copy-Item backend,scripts,docs,vehicle_profiles,sample_data dist/SherloCAN-v0.2-alpha -Recurse
-          Copy-Item README.md dist/SherloCAN-v0.2-alpha/
-          Compress-Archive dist/SherloCAN-v0.2-alpha dist/SherloCAN-v0.2-alpha-windows.zip
+          New-Item -ItemType Directory -Force dist/SherloCAN-v0.2.1-vehicle-test | Out-Null
+          Copy-Item backend,scripts,docs,vehicle_profiles,sample_data dist/SherloCAN-v0.2.1-vehicle-test -Recurse
+          Copy-Item README.md dist/SherloCAN-v0.2.1-vehicle-test/
+          Compress-Archive dist/SherloCAN-v0.2.1-vehicle-test dist/SherloCAN-v0.2.1-vehicle-test-windows.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: SherloCAN-v0.2-alpha-windows
-          path: dist/SherloCAN-v0.2-alpha-windows.zip
+          name: SherloCAN-v0.2.1-vehicle-test-windows
+          path: dist/SherloCAN-v0.2.1-vehicle-test-windows.zip
