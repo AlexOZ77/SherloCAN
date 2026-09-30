@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SherloCAN regression evidence manifest",
+  "type": "object",
+  "required": ["fixture_id", "source_type", "raw_sha256", "acceptance", "expected_observations"],
+  "properties": {
+    "fixture_id": {"type": "string"},
+    "source_type": {"enum": ["replay", "j2534", "openport-sd", "other"]},
+    "vehicle_profile": {"type": ["string", "null"]},
+    "software_version": {"type": ["string", "null"]},
+    "raw_sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "acceptance": {"enum": ["ACCEPTED", "REJECTED", "DATA_LOSS"]},
+    "expected_observations": {"type": "array", "items": {"type": "string"}},
+    "diagnostic_state": {"enum": ["UNKNOWN", "HYPOTHESIS", "SUPPORTED", "VERIFIED", "REJECTED"]}
+  },
+  "additionalProperties": true
+}
