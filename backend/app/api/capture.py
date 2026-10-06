@@ -21,6 +21,7 @@ from ..capture.openport_sd import validate_logcfg, build_obd01_template
 from ..capture.sd_import import inspect_sd_logs, import_sd_log
 from ..capture.sd_detect import discover_windows_candidates
 from ..capture.can_log_import import CANLogImportError, import_can_log
+from ..capture.log_analysis import analyze_normalized_log
 
 router = APIRouter(prefix="/api/capture", tags=["capture"])
 
@@ -32,6 +33,22 @@ async def import_log(file: UploadFile = File(...)) -> dict:
         root = Path(__file__).resolve().parents[3] / "data" / "captures"
         return import_can_log(file.filename or "can.log", content, root)
     except CANLogImportError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/import-log/{session_id}/analysis")
+def imported_log_analysis(session_id: str, gap_ratio: float = 3.0) -> dict:
+    if not session_id.startswith("import-") or any(x in session_id for x in ("/", "\\\\", "..")):
+        raise HTTPException(status_code=400, detail="invalid import session id")
+    root = Path(__file__).resolve().parents[3] / "data" / "captures" / "imports" / session_id
+    normalized = root / "frames.csv"
+    if not normalized.is_file():
+        raise HTTPException(status_code=404, detail="imported CAN log not found")
+    try:
+        result = analyze_normalized_log(normalized, gap_ratio=gap_ratio)
+        result["session_id"] = session_id
+        return result
+    except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
 
