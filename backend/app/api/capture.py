@@ -23,6 +23,7 @@ from ..capture.sd_detect import discover_windows_candidates
 from ..capture.can_log_import import CANLogImportError, import_can_log
 from ..capture.log_analysis import analyze_normalized_log
 from ..capture.sd_prepare import SDPrepError, inspect_target, write_configuration
+from ..capture.openport_profiles import list_profiles, render_profile, validate_custom_profile
 
 router = APIRouter(prefix="/api/capture", tags=["capture"])
 
@@ -52,6 +53,21 @@ def imported_log_analysis(session_id: str, gap_ratio: float = 3.0) -> dict:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
+
+@router.get("/openport-sd/profiles")
+def openport_sd_profiles() -> list[dict]:
+    return list_profiles()
+
+@router.get("/openport-sd/profiles/{profile_id}")
+def openport_sd_profile(profile_id: str) -> dict:
+    try:
+        return render_profile(profile_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+@router.post("/openport-sd/profiles/custom/validate")
+def openport_sd_custom_profile_validate(text: str) -> dict:
+    return validate_custom_profile(text)
 
 @router.get("/openport-sd/prepare/inspect")
 def openport_sd_prepare_inspect(root: str) -> dict:
