@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import os
 import shutil
-import subprocess
 from pathlib import Path
 
 
@@ -14,38 +13,35 @@ class SDPrepError(ValueError):
 def inspect_target(root: Path) -> dict:
     resolved = root.resolve()
     if os.name != "nt":
-        return {"root": str(root), "supported": False, "safe_to_format": False, "reason": "SD preparation is supported on Windows only"}
+        return {"root": str(root), "supported": False, "safe_target": False, "reason": "SD preparation is supported on Windows only"}
     drive = resolved.drive.upper()
     system_drive = os.environ.get("SystemDrive", "C:").upper()
     if not drive or drive == system_drive:
-        return {"root": str(root), "supported": True, "safe_to_format": False, "reason": "system drive or invalid removable target"}
+        return {"root": str(root), "supported": True, "safe_target": False, "reason": "system drive or invalid removable target"}
     try:
         usage = shutil.disk_usage(resolved)
     except OSError as exc:
         raise SDPrepError(str(exc)) from exc
-    return {"root": drive + "\\", "supported": True, "safe_to_format": True, "reason": "explicit non-system drive", "size_bytes": usage.total}
-
-
-def format_fat32(root: Path, confirmation: str) -> dict:
-    info = inspect_target(root)
-    expected = f"FORMAT {info['root']}"
-    if not info.get("safe_to_format"):
-        raise SDPrepError(info["reason"])
-    if confirmation.strip().upper() != expected.upper():
-        raise SDPrepError(f"confirmation must exactly match: {expected}")
-    drive = Path(info["root"]).drive
-    proc = subprocess.run(
-        ["format.com", drive, "/FS:FAT32", "/Q", "/V:SHERLOCAN", "/Y"],
-        capture_output=True, text=True, timeout=120,
-    )
-    if proc.returncode != 0:
-        raise SDPrepError((proc.stderr or proc.stdout or "format failed").strip())
-    return {**inspect_target(Path(info["root"])), "formatted": True, "filesystem_requested": "FAT32", "label_requested": "SHERLOCAN"}
+    return {
+        "root": drive + "\\", "supported": True, "safe_target": True,
+        "reason": "explicit non-system drive", "size_bytes": usage.total,
+        "formatting": {
+            "automatic": False, "required_filesystem": "FAT32",
+            "label_suggestion": "SHERLOCAN",
+            "windows_steps": [
+                "Open File Explorer and confirm the selected drive letter.",
+                "Right-click the microSD drive and choose Format.",
+                "Select FAT32 when available; do not select another drive.",
+                "Optionally set volume label SHERLOCAN, then start formatting.",
+                "After Windows reports completion, return to SherloCAN and click Re-check SD.",
+            ],
+        },
+    }
 
 
 def write_configuration(root: Path, text: str, filename: str = "logcfg.txt") -> dict:
     info = inspect_target(root)
-    if not info.get("supported"):
+    if not info.get("supported") or not info.get("safe_target"):
         raise SDPrepError(info["reason"])
     if filename.lower() != "logcfg.txt":
         raise SDPrepError("configuration filename must be logcfg.txt")
@@ -55,9 +51,8 @@ def write_configuration(root: Path, text: str, filename: str = "logcfg.txt") -> 
     if actual != text:
         raise SDPrepError("configuration verification failed after write")
     manifest = {
-        "prepared_by": "SherloCAN",
-        "config": "logcfg.txt",
-        "verified_after_write": True,
+        "prepared_by": "SherloCAN", "config": "logcfg.txt",
+        "verified_after_write": True, "automatic_formatting": False,
         "instruction": "Safely eject the card, insert it into OpenPort 2.0, then connect OpenPort to the vehicle for the configured standalone logging mode.",
     }
     (Path(info["root"]) / "sherlocan_sd.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
