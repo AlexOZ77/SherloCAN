@@ -1,5 +1,5 @@
 from pathlib import Path
-from fastapi import APIRouter
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from ..capture.anomaly import build_baseline, detect_long_gaps
 from ..capture.replay import FileReplayAdapter
 from ..capture.j2534 import J2534Adapter
@@ -20,8 +20,20 @@ from ..capture.evidence_manifest import build_evidence_manifest
 from ..capture.openport_sd import validate_logcfg, build_obd01_template
 from ..capture.sd_import import inspect_sd_logs, import_sd_log
 from ..capture.sd_detect import discover_windows_candidates
+from ..capture.can_log_import import CANLogImportError, import_can_log
 
 router = APIRouter(prefix="/api/capture", tags=["capture"])
+
+@router.post("/import-log")
+async def import_log(file: UploadFile = File(...)) -> dict:
+    """Import a read-only CAN log and normalize it to SherloCAN CANFrame CSV."""
+    try:
+        content = await file.read()
+        root = Path(__file__).resolve().parents[3] / "data" / "captures"
+        return import_can_log(file.filename or "can.log", content, root)
+    except CANLogImportError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
 
 @router.get("/openport-sd/drives")
 def openport_sd_drives() -> list[dict]:
