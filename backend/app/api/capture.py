@@ -22,6 +22,7 @@ from ..capture.sd_import import inspect_sd_logs, import_sd_log
 from ..capture.sd_detect import discover_windows_candidates
 from ..capture.can_log_import import CANLogImportError, import_can_log
 from ..capture.log_analysis import analyze_normalized_log
+from ..capture.sd_prepare import SDPrepError, inspect_target, write_configuration
 
 router = APIRouter(prefix="/api/capture", tags=["capture"])
 
@@ -51,6 +52,23 @@ def imported_log_analysis(session_id: str, gap_ratio: float = 3.0) -> dict:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
+
+@router.get("/openport-sd/prepare/inspect")
+def openport_sd_prepare_inspect(root: str) -> dict:
+    try:
+        return inspect_target(Path(root))
+    except SDPrepError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+@router.post("/openport-sd/prepare/write")
+def openport_sd_prepare_write(root: str, text: str) -> dict:
+    check = validate_logcfg(text, "logcfg.txt")
+    if not check.valid:
+        raise HTTPException(status_code=400, detail={"message":"logcfg.txt validation failed","warnings":check.warnings})
+    try:
+        return write_configuration(Path(root), text)
+    except (SDPrepError, UnicodeEncodeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 @router.get("/openport-sd/drives")
 def openport_sd_drives() -> list[dict]:
