@@ -15,10 +15,9 @@ Pipeline:
 target app -> REA investigation on supported analysis workstation -> Evidence bundle / feature contract -> Grill -> approved ADR -> clean SherloCAN implementation -> CI -> Windows 8.1 packaging -> hardware acceptance.
 
 ## Candidate capability families
-P0:
-1. Oscilloscope + CAN time correlation: import/export traces from MT Pro / FNIRSI / other tools where lawful and technically documented; align waveform timestamps with CAN events.
-2. Diagnostic-app log adapters: parse exported logs/reports into SherloCAN canonical Evidence without controlling the source app.
-3. Feature reconstruction ledger: store observed behavior, unknowns, fixtures and verification status for a capability learned from another app.
+Current scope:
+1. FNIRSI 2C53T only. No MT Pro, EasyDiag, or generic third-party adapters in the current milestone.
+2. Feature reconstruction ledger: store observed behavior, unknowns, fixtures and verification status for the FNIRSI capability.
 
 P1:
 4. Managed/.NET diagnostic-app static inspection to document file formats and observable workflows when source is unavailable.
