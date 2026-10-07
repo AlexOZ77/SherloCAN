@@ -1,6 +1,6 @@
 # ADR-0003: FNIRSI 2C53T integration boundary
 
-Status: GRILL IN PROGRESS
+Status: ACCEPTED FOR IMPLEMENTATION
 Target: FNIRSI 2C53T only
 
 ## Established facts
@@ -28,3 +28,9 @@ numeric adapter -> canonical sampled trace -> time calibration -> CAN correlatio
 CI: fixture BMP import, malformed BMP rejection, SHA-256 preservation, no source mutation.
 Win8.1: Type-C storage is readable and artifacts import offline.
 Hardware: exact 2C53T artifact inventory captured; one known waveform saved/imported; displayed metadata compared to device screen.
+
+## Grill Round 1 decisions — accepted
+- Import saved 2C53T artifacts from USB/Type-C storage first.
+- Preserve source BMP as Evidence with SHA-256; do not call pixels raw ADC samples.
+- Inspect physical-device storage for numeric waveform data / USB protocol before implementing sampled-trace math.
+- Allow manual FNIRSI↔CAN sync marker; file timestamps alone do not establish verified synchronization.
