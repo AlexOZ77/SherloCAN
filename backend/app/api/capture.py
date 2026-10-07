@@ -22,10 +22,22 @@ from ..capture.sd_import import inspect_sd_logs, import_sd_log
 from ..capture.sd_detect import discover_windows_candidates
 from ..capture.can_log_import import CANLogImportError, import_can_log
 from ..capture.log_analysis import analyze_normalized_log
+from ..capture.fnirsi_import import FNIRSIImportError, import_fnirsi_bmp
 from ..capture.sd_prepare import SDPrepError, inspect_target, write_configuration
 from ..capture.openport_profiles import list_profiles, render_profile, validate_custom_profile
 
 router = APIRouter(prefix="/api/capture", tags=["capture"])
+
+
+@router.post("/fnirsi/2c53t/import")
+async def fnirsi_2c53t_import(file: UploadFile = File(...), can_session_id: str | None = None) -> dict:
+    """Import FNIRSI 2C53T saved BMP as rendered, read-only Evidence. No raw ADC claim."""
+    try:
+        content = await file.read()
+        root = Path(__file__).resolve().parents[3] / "data" / "captures"
+        return import_fnirsi_bmp(file.filename or "fnirsi.bmp", content, root, can_session_id=can_session_id)
+    except FNIRSIImportError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 @router.post("/import-log")
 async def import_log(file: UploadFile = File(...)) -> dict:
